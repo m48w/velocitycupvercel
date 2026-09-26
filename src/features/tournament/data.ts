@@ -1,4 +1,4 @@
-import { buildTournamentSchedule, GROUP_IDS } from "./schedule";
+import { buildTournamentSchedule, GROUP_IDS } from "./schedule.js";
 import type { Match, Team } from "../../types";
 
 const palette = ["#f97316", "#22c55e", "#38bdf8", "#a78bfa", "#f43f5e"];

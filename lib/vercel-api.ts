@@ -1,6 +1,6 @@
 import { neon } from "@neondatabase/serverless";
 import type { Role, SessionInfo, Match, TournamentState } from "../src/types";
-import { initialMatches } from "../src/features/tournament/data";
+import { initialMatches } from "../src/features/tournament/data.js";
 
 type RequestHandler = (request: Request) => Promise<Response>;
 const numberInt = (value: unknown) => typeof value === "number" && Number.isInteger(value) && value >= 0;
