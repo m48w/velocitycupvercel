@@ -1,0 +1,4 @@
+# Copy to .dev.vars for local development. Production values are set with `wrangler secret put`.
+SUPERADMIN_PASSWORD=superadmin1234
+SUBADMIN_PASSWORD=subadmin1234
+SESSION_SECRET=dev-only-session-secret

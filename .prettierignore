@@ -1,0 +1,6 @@
+dist
+TempServerData
+package-lock.json
+docs
+.wrangler
+worker-configuration.d.ts
