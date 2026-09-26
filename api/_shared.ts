@@ -1,3 +1,4 @@
+import { neon } from "@neondatabase/serverless";
 import type { Role, SessionInfo, Match, TournamentState } from "../src/types";
 import { initialMatches } from "../src/features/tournament/data";
 
@@ -25,18 +26,6 @@ async function readSession(request: Request): Promise<Session | null> {
     const session = JSON.parse(new TextDecoder().decode(unb64(payload))) as Session; const account = accounts[session.username];
     return account && account.role === session.role && account.court === session.court && session.exp * 1000 > Date.now() && typeof session.deviceId === "string" ? session : null;
   } catch { return null; }
-}
-function neonHttp(databaseUrl: string): Db {
-  const endpoint = new URL(databaseUrl);
-  const connectionString = `${endpoint.protocol}//${endpoint.username}:${endpoint.password}@${endpoint.host}${endpoint.pathname}${endpoint.search}`;
-  return async (strings, ...values) => {
-    let query = "";
-    for (let i = 0; i < strings.length; i += 1) query += `${strings[i]}${i < values.length ? `$${i + 1}` : ""}`;
-    const response = await fetch("https://sql.neon.tech/sql", { method: "POST", headers: { "content-type": "application/json", "neon-connection-string": connectionString }, body: JSON.stringify({ query, params: values }) });
-    if (!response.ok) throw new Error(`database request failed (${response.status})`);
-    const result = await response.json() as { rows?: Record<string, unknown>[] };
-    return result.rows ?? [];
-  };
 }
 const json = (status: number, data: unknown, headers?: Record<string, string>) => {
   const resultHeaders = new Headers(headers);
@@ -106,7 +95,7 @@ export function apiHandler(route: "state" | "matches" | "match" | "reset" | "ses
   return async (request) => {
     const databaseUrl = process.env.DATABASE_URL;
     if (!databaseUrl) return json(503, { error: "DATABASE_URL must be configured for Vercel Postgres (Neon)." });
-    const sql = neonHttp(databaseUrl);
+    const sql = neon(databaseUrl) as unknown as Db;
     const path = new URL(request.url).pathname;
     if (["POST", "PUT", "PATCH", "DELETE"].includes(request.method) && request.headers.get("content-type")?.split(";")[0].trim().toLowerCase() !== "application/json") {
       return json(415, { error: "requests that change data must send content-type: application/json", code: "UNSUPPORTED_MEDIA_TYPE" });

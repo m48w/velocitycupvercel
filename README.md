@@ -32,8 +32,7 @@ these Production environment variables in Vercel:
 - `SUBADMIN_PASSWORD`: shared by `subadmin1`–`subadmin6`
 - `SESSION_SECRET`: a long random secret (at least 32 random bytes)
 
-Neon provides an HTTPS SQL endpoint which this project uses directly, so no database package or
-native driver setup is required.
+The API uses Neon’s official serverless driver over HTTPS for database queries.
 
 Deploy with `npm run deploy` (Vercel CLI) or by pushing to the connected Git repository. API data
 and login lockouts are stored in Neon Postgres. Tournament updates are polled every two seconds;
