@@ -1,2 +1,2 @@
 import { apiHandler } from "../lib/vercel-api.js";
-export default apiHandler("session");
+export const GET = apiHandler("session");
