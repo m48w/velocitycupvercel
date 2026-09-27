@@ -6,6 +6,27 @@ Velocity Cup 2026 の大会運営画面を、ブラウザーから確認・操�
 
 ## ここまでに実装した内容
 
+### Vercel 対応（2026-09-26〜27）
+
+- Cloudflare Worker 前提だった本番構成に、Vercel Functions と Neon Postgres の API を追加。
+- Vercel では Durable Object / WebSocket を使わず、Neon に大会状態を保存し、画面は2秒間隔で状態を取得する。
+- Neon 接続は `@neondatabase/serverless` を利用する。
+- 管理者セッションは署名付き HttpOnly Cookie。Vercel の Environment Variables に `DATABASE_URL`、`SUPERADMIN_PASSWORD`、`SUBADMIN_PASSWORD`、`SESSION_SECRET` を設定する。Preview と Production は別々に設定する。
+- API 関数は Vercel Web handler として名前付き `GET` / `POST` / `PUT` / `PATCH` を export する。
+- `/api/matches/:id` は `vercel.json` の rewrite で `/api/matches/[id]` に転送する。これが無いと試合更新の PATCH が 405 になる。
+- 共有関数は `lib/vercel-api.ts` に置く。Vercel の Functions 出力で Node ESM が解決できるよう、実行時 import の拡張子を `.js` とする。
+
+Vercel 対応で解決した障害:
+
+| 症状 | 原因 | 対応 |
+|---|---|---|
+| `/api/state` が 500 | Neon の SQL endpoint を固定 URL にしていた | Neon 公式 serverless driver を採用 |
+| `ERR_MODULE_NOT_FOUND` | ESM import の拡張子不足、共有コード配置 | shared module を `lib/` に移動し、`.js` import を明記 |
+| API の戻り値が無視される警告 | `default export` を Vercel が `(req, res)` handler と解釈 | 名前付き HTTP method export に変更 |
+| Match Control の PATCH が 405 | 動的 match ID URL が `[id]` function に届かない | `/api/matches/:id` rewrite を追加 |
+
+最終確認ではログイン、Match Control、StartMatch が動作した。デプロイ環境の設定値はリポジトリに保存しない。
+
 - React + TypeScript + Vite による大会運営Webアプリを構築。
 - ブランド名を `CUPFLOW` から `VELOCITY CUP 2026` に変更。
 - Overview、Matches、Live、Standings、Bracket の各画面を実装。
@@ -71,6 +92,7 @@ npm run dev -- --host 0.0.0.0 --port 4173
 - 認証はサーバー側で行う。パスワードは Cloudflare の Secrets（`SUPERADMIN_PASSWORD`・`SUBADMIN_PASSWORD`・`SESSION_SECRET`）で管理し、ログインに成功すると署名付きの `session` Cookie を発行する。
 - 試合データは Durable Object に保存する。ローカルでは `.wrangler/state/` 以下にコピーが置かれる。
 - 複数端末間の同期は Durable Object からの WebSocket 配信で実現済み。認証もサーバー側に実装済みである。
+- Cloudflare 構成と Vercel 構成を併存させている。Vercel 本番では Neon Postgres とポーリング、Cloudflare では Durable Object SQLite と WebSocket を使う。
 - データを初期状態に戻すには、Super-admin画面（`/superadmin`）の「↺ Reset all matches」ボタンを使うのが通常の方法である。プログラムから行う場合は Super-admin として `POST /api/reset` を呼ぶ。
 
 ## 次の候補
